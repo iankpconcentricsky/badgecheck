@@ -3,6 +3,7 @@ import jsonschema
 from pyld import jsonld
 
 from ..actions.tasks import add_task
+from ..actions.extension import add_extension
 from ..exceptions import TaskPrerequisitesError
 from ..openbadges_context import OPENBADGES_CONTEXT_V2_URI
 from ..state import get_node_by_id, get_node_by_path
@@ -55,9 +56,13 @@ def validate_single_extension(state, task_meta, **options):
             )
         )
 
+    actions = [
+        add_extension(node_id, data=compact_data)
+    ]
+
     return task_result(True, "Extension {} validated on node {}".format(
         extension_type, node_id_string
-    ))
+    ), actions)
 
 
 def validate_extension_node(state, task_meta, **options):

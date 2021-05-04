@@ -166,6 +166,7 @@ def generate_report(store, options=DEFAULT_OPTIONS):
 
     ret = {
         'graph': state['graph'],
+        'extensions': state['extensions'],
         'input': processed_input,
         'report': report
     }

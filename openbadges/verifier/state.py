@@ -6,6 +6,7 @@ from .utils import list_of, MESSAGE_LEVEL_ERROR, MESSAGE_LEVEL_INFO, MESSAGE_LEV
 INITIAL_STATE = {
     'input': {},
     'graph': [],
+    'extensions': [],
     'tasks': [],
     'validationReport': {}
 }
