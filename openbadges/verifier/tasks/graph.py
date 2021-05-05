@@ -23,7 +23,8 @@ from ..utils import list_of, jsonld_use_cache,make_string_from_bytes, MESSAGE_LE
 from .task_types import (DETECT_AND_VALIDATE_NODE_CLASS, FETCH_HTTP_NODE, INTAKE_JSON, JSONLD_COMPACT_DATA,
                          PROCESS_BAKED_RESOURCE, UPGRADE_0_5_NODE, UPGRADE_1_0_NODE, UPGRADE_1_1_NODE,
                          VALIDATE_EXPECTED_NODE_CLASS, VALIDATE_EXTENSION_NODE)
-from .utils import abbreviate_node_id as abv_node, filter_tasks, is_iri, is_url, task_result, URN_REGEX
+from .utils import (abbreviate_node_id as abv_node, filter_tasks, is_iri,
+                    is_url, task_result, URN_REGEX, generate_node_hash)
 from .validation import OBClasses
 
 
@@ -145,6 +146,34 @@ def intake_json(state, task_meta, **options):
     return task_result(True, "Processed node {}".format(node_id), actions)
 
 
+def _generate_extension_ids(node_data):
+    argument_is_primative = type(node_data) not in [dict, list]
+    argument_is_list = type(node_data) is list
+    argument_is_node = type(node_data) is dict
+
+    if argument_is_primative:
+        return
+
+    if argument_is_list:
+        for value in node_data:  # Check each list item for further nodes
+            _generate_extension_ids(value)
+
+    if argument_is_node:
+        node_is_extension = "type" in node_data and \
+            "Extension" in list_of(node_data['type'])
+
+        if node_is_extension:
+            extension_id = node_data.get('id', generate_node_hash(node_data))
+            node_data['id'] = extension_id
+
+        for attr_name, value in node_data.iteritems():
+            skip_attributes = ['id', 'type']
+            if attr_name in skip_attributes:
+                continue
+
+            _generate_extension_ids(value)  # Inspect whatever value this is
+
+
 def _get_extension_actions(current_node, entry_path, new_contexts=None):
     new_actions = []
     if new_contexts is None:
@@ -219,6 +248,10 @@ def jsonld_compact_data(state, task_meta, **options):
             "Successfully compacted node {} from source {} and found ID mismatch".format(node_id, task_meta['node_id']),
             actions
         )
+
+    # Iterate property values searching for extensions and assigning them
+    # an id if not already given
+    _generate_extension_ids(result)
 
     actions = [
         add_node(node_id, data=result)

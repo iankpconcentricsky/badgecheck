@@ -58,7 +58,7 @@ def validate_single_extension(state, task_meta, **options):
 
     actions = [
         add_extension(node_id, data={
-            "node_id": node_path[0],
+            "node_path": node_path,
             "value": compact_data,
         })
     ]
